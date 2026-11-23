@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cap-App — Neon Purple Engine</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #090514;
+      --surface: #130b29;
+      --surface-2: #1c103b;
+      --neon: #a855f7;
+      --neon-bright: #d946ef;
+      --neon-cyan: #22d3ee;
+      --text: #f5f3ff;
+      --muted: #a78bfa;
+      --border: rgba(168, 85, 247, 0.35);
+      --glow: 0 0 18px rgba(168, 85, 247, 0.45), 0 0 36px rgba(192, 38, 211, 0.2);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: radial-gradient(circle at top, #1e0b46 0%, #090514 65%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 18px 14px 48px;
+      overflow-x: hidden;
+    }
+
+    /* ЗАСТАВКА С ЛОГОТИПОМ */
+    #splashScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: radial-gradient(circle at center, #230c54 0%, #070311 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      transition: opacity 0.25s ease;
+    }
+
+    #splashScreen.done {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .splash-logo {
+      display: flex;
+      gap: 8px;
+    }
+
+    .splash-char {
+      width: 40px;
+      height: 48px;
+      border-radius: 12px;
+      background: #170b36;
+      border: 1px solid rgba(217, 70, 239, 0.65);
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.55);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 20px;
+      color: #f5d0fe;
+      animation: popChar 0.45s ease both;
+    }
+
+    .splash-char.alt {
+      background: linear-gradient(135deg, #9333ea, #ec4899);
+      color: #ffffff;
+    }
+
+    @keyframes popChar {
+      0% { transform: translateY(18px) scale(0.8); }
+      100% { transform: translateY(0) scale(1); }
+    }
+
+    .splash-tag {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      color: #e879f9;
+    }
+
+    .wrap {
+      max-width: 560px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel {
+      background: rgba(19, 11, 41, 0.92);
+      border: 1px solid var(--border);
+      box-shadow: var(--glow);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .title-main {
+      font-size: 20px;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 0 12px rgba(217, 70, 239, 0.75);
+    }
+
+    .title-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .admin-badge {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(232, 121, 249, 0.7);
+      background: linear-gradient(135deg, #7e22ce, #c026d3);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 0 16px rgba(192, 38, 211, 0.55);
+      cursor: pointer;
+    }
+
+    .nav {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .nav-btn {
+      padding: 11px 6px;
+      border-radius: 13px;
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      background: var(--surface-2);
+      color: #c4b5fd;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, #7e22ce, #a21caf);
+      color: #ffffff;
+      border-color: #f0abfc;
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.65);
+    }
+
+    .h2 { font-size: 16px; font-weight: 800; margin-bottom: 4px; color: #fff; }
+    .desc { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .field {
+      flex: 1 1 180px;
+      padding: 13px 14px;
+      border-radius: 13px;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      background: #0d071d;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      outline: none;
+    }
+
+    .field:focus {
+      border-color: var(--neon-bright);
+      box-shadow: 0 0 12px rgba(217, 70, 239, 0.45);
+    }
+
+    .btn {
+      padding: 13px 16px;
+      border-radius: 13px;
+      border: 1px solid rgba(232, 121, 249, 0.6);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #ffffff;
+      background: linear-gradient(135deg, #7e22ce, #c026d3);
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
+    }
+
+    .btn-ghost {
+      background: var(--surface-2);
+      border-color: rgba(168, 85, 247, 0.35);
+      box-shadow: none;
+    }
+
+    .scan-panel {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 13px;
+      background: #0c061a;
+      border: 1px solid rgba(168, 85, 247, 0.45);
+    }
+
+    .scan-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .scan-handle {
+      font-family: monospace;
+      font-size: 14px;
+      color: #f0abfc;
+    }
+
+    .bar {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(168, 85, 247, 0.2);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 45%;
+      background: linear-gradient(90deg, #a855f7, #ec4899, #22d3ee);
+      animation: moveBar 0.95s linear infinite;
+    }
+
+    @keyframes moveBar {
+      0% { transform: translateX(-90%); }
+      100% { transform: translateX(240%); }
+    }
+
+    .notice {
+      margin-top: 12px;
+      padding: 11px 13px;
+      border-radius: 12px;
+      background: #0d071d;
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      font-size: 12px;
+      color: #d8b4fe;
+    }
+
+    .cards { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+
+    .card {
+      padding: 13px 14px;
+      border-radius: 14px;
+      background: var(--surface-2);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .handle { font-size: 15px; font-weight: 800; color: #ffffff; }
+    .meta { font-size: 11px; color: var(--muted); }
+
+    .pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .pill-rare {
+      background: linear-gradient(135deg, #c026d3, #f59e0b);
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(217, 70, 239, 0.55);
+    }
+
+    .pill-ok { background: rgba(34, 211, 238, 0.16); color: #67e8f9; border: 1px solid rgba(34, 211, 238, 0.4); }
+    .pill-busy { background: rgba(244, 63, 94, 0.16); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.4); }
+
+    .val-box {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 9px 11px;
+      border-radius: 10px;
+      background: #0b0617;
+      font-size: 12px;
+      font-weight: 700;
+      color: #f0abfc;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="splashScreen">
+    <div class="splash-logo">
+      <div class="splash-char">C</div>
+      <div class="splash-char">A</div>
+      <div class="splash-char">P</div>
+      <div class="splash-char alt">A</div>
+      <div class="splash-char alt">P</div>
+      <div class="splash-char alt">P</div>
+    </div>
+    <div class="splash-tag">NEON PURPLE • ADMIN ACCESS</div>
+  </div>
+
+  <script>
+    (function closeSplash() {
+      function hide() {
+        var s = document.getElementById('splashScreen');
+        if (s) {
+          s.classList.add('done');
+          setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 250);
+        }
+      }
+      setTimeout(hide, 750);
+      window.addEventListener('load', function () { setTimeout(hide, 250); });
+    })();
+  </script>
+
+  <div class="wrap">
+    <div class="panel top-bar">
+      <div>
+        <div class="title-main">Cap-App</div>
+        <div class="title-sub">Генератор 6–8 • Тройная проверка • Оценка</div>
+      </div>
+      <button id="adminBtn" class="admin-badge" type="button">★ ADMIN / ПРЕМИУМ</button>
+    </div>
+
+    <div class="nav">
+      <button class="nav-btn active" data-tab="gen" type="button">Генератор</button>
+      <button class="nav-btn" data-tab="chk" type="button">Чекер</button>
+      <button class="nav-btn" data-tab="val" type="button">Оценка</button>
+      <button class="nav-btn" data-tab="mkt" type="button">Маркет</button>
+    </div>
+
+    <div id="tab-gen" class="panel">
+      <div class="h2">Генератор (6–8 символов)</div>
+      <div class="desc">Перебор и тройная проверка (Bot API, t.me, Fragment) с меткой <b>1 редкий (премиум)</b>.</div>
+      <div class="row" style="align-items: center; justify-content: space-between;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#e9d5ff;cursor:pointer;">
+          <input id="rareToggle" type="checkbox" checked />
+          <span>Редкие корни</span>
+        </label>
+        <button id="genBtn" class="btn" type="button">Найти и проверить</button>
+      </div>
+      <div id="genScan" class="scan-panel hidden">
+        <div class="scan-head">
+          <span id="genScanText">Поиск и проверка...</span>
+          <span id="genScanHandle" class="scan-handle">@vortexix</span>
+        </div>
+        <div class="bar"><div class="bar-fill"></div></div>
+      </div>
+      <div id="genNotice" class="notice">Нажми «Найти и проверить» для запуска.</div>
+      <div id="genList" class="cards"></div>
+    </div>
+
+    <div id="tab-chk" class="panel hidden">
+      <div class="h2">Чекер юзернейма</div>
+      <div class="desc">Проверка по Bot API, t.me и Fragment.</div>
+      <div class="row">
+        <input id="chkInput" class="field" type="text" placeholder="Например: vortexline" autocomplete="off" />
+        <button id="chkBtn" class="btn" type="button">Проверить</button>
+      </div>
+      <div id="chkScan" class="scan-panel hidden">
+        <div class="scan-head">
+          <span id="chkScanText">Проверяем источники...</span>
+          <span id="chkScanHandle" class="scan-handle">@handle</span>
+        </div>
+        <div class="bar"><div class="bar-fill"></div></div>
+      </div>
+      <div id="chkNotice" class="notice">Введи юзернейм для проверки.</div>
+      <div id="chkList" class="cards"></div>
+    </div>
+
+    <div id="tab-val" class="panel hidden">
+      <div class="h2">Оценка юзернейма</div>
+      <div class="desc">Отдельный расчёт редкости, баллов и примерной цены в TON / Stars.</div>
+      <div class="row">
+        <input id="valInput" class="field" type="text" placeholder="Введи юзернейм для оценки" autocomplete="off" />
+        <button id="valBtn" class="btn" type="button">Оценить</button>
+      </div>
+      <div id="valScan" class="scan-panel hidden">
+        <div class="scan-head">
+          <span id="valScanText">Считаем ценность...</span>
+          <span id="valScanHandle" class="scan-handle">@handle</span>
+        </div>
+        <div class="bar"><div class="bar-fill"></div></div>
+      </div>
+      <div id="valNotice" class="notice">Введи любой юзернейм — покажу балл и оценку.</div>
+      <div id="valList" class="cards"></div>
+    </div>
+
+    <div id="tab-mkt" class="panel hidden">
+      <div class="h2">Маркет и кошелёк</div>
+      <div class="desc">Сохрани кошелёк и выстави юзернейм на витрину.</div>
+      <div class="row" style="margin-bottom: 12px;">
+        <input id="walletInput" class="field" type="text" placeholder="Адрес кошелька" autocomplete="off" />
+        <button id="walletBtn" class="btn btn-ghost" type="button">Сохранить</button>
+      </div>
+      <div class="row">
+        <input id="lotNameInput" class="field" type="text" placeholder="Юзернейм лота" autocomplete="off" />
+        <input id="lotPriceInput" class="field" type="number" min="0.1" step="0.1" placeholder="Цена TON" />
+        <button id="lotBtn" class="btn" type="button">Выставить</button>
+      </div>
+      <div id="mktNotice" class="notice">Загрузка лотов...</div>
+      <div id="mktList" class="cards"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      try {
+        if (window.Telegram && window.Telegram.WebApp) {
+          window.Telegram.WebApp.ready();
+          window.Telegram.WebApp.expand();
+        }
+      } catch (_) {}
+
+      var ROOTS = [
+        'vortex', 'zenith', 'kobra', 'shadow', 'pulse', 'cyber', 'ghost', 'drift',
+        'venom', 'frost', 'storm', 'titan', 'blade', 'spark', 'noble', 'prime',
+        'apex', 'nova', 'aura', 'echo', 'flux', 'core', 'zero', 'onyx', 'volt'
+      ];
+      var SAMPLES = ['vortexon', 'shadowix', 'lynxcore', 'novapulse', 'driftfox', 'kobraven'];
+
+      function wait(ms) {
+        return new Promise(function (r) { setTimeout(r, ms); });
+      }
+
+      function clean(raw) {
+        return String(raw || '').trim().replace(/^@+/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+      }
+
+      function scoreHandle(name) {
+        var u = clean(name);
+        var root = ROOTS.find(function (r) { return u.indexOf(r) !== -1; }) || null;
+        var pts = 45;
+        var notes = [];
+        if (u.length <= 6) { pts += 22; notes.push(u.length + ' симв.'); }
+        else if (u.length <= 8) { pts += 14; notes.push(u.length + ' симв.'); }
+        else { pts -= 6; notes.push(u.length + ' симв.'); }
+
+        if (root) { pts += 22; notes.push('корень ' + root); }
+        if (!/[\d_]/.test(u)) { pts += 10; notes.push('чистые буквы'); }
+        else { pts -= 8; notes.push('цифры/_'); }
+
+        pts = Math.max(10, Math.min(99, pts));
+        var ton = Number(((pts / 100) * 18 + (root ? 4.5 : 0)).toFixed(1));
+        var stars = Math.round(ton * 120);
+        var tier = pts >= 82 ? 'Редкий топ' : (pts >= 65 ? 'Сильный' : 'Базовый');
+        return { u: u, pts: pts, ton: ton, stars: stars, tier: tier, notes: notes.join(' • ') };
+      }
+
+      var navBtns = document.querySelectorAll('.nav-btn');
+      var panels = {
+        gen: document.getElementById('tab-gen'),
+        chk: document.getElementById('tab-chk'),
+        val: document.getElementById('tab-val'),
+        mkt: document.getElementById('tab-mkt')
+      };
+
+      navBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var t = btn.getAttribute('data-tab');
+          navBtns.forEach(function (b) { b.classList.toggle('active', b === btn); });
+          Object.keys(panels).forEach(function (k) { panels[k].classList.toggle('hidden', k !== t); });
+          if (t === 'mkt') loadMarket();
+        });
+      });
+
+      async function runAnim(box, textEl, handleEl, phrases, ms) {
+        box.classList.remove('hidden');
+        var t0 = Date.now();
+        var i = 0;
+        while (Date.now() - t0 < ms) {
+          handleEl.textContent = '@' + SAMPLES[Math.floor(Math.random() * SAMPLES.length)];
+          textEl.textContent = phrases[i % phrases.length];
+          i++;
+          await wait(140);
+        }
+        box.classList.add('hidden');
+      }
+
+      function badgeInfo(item) {
+        var b = item.badge || {};
+        if (b.code === 'rare_premium') return { cls: 'pill-rare', label: '1 редкий (премиум)' };
+        if (b.code === 'taken' || b.code === 'fragment') return { cls: 'pill-busy', label: b.label || 'Занят' };
+        return { cls: 'pill-ok', label: b.label || 'Свободен' };
+      }
+
+      // Генератор
+      var genBtn = document.getElementById('genBtn');
+      var rareToggle = document.getElementById('rareToggle');
+      var genScan = document.getElementById('genScan');
+      var genScanText = document.getElementById('genScanText');
+      var genScanHandle = document.getElementById('genScanHandle');
+      var genNotice = document.getElementById('genNotice');
+      var genList = document.getElementById('genList');
+
+      genBtn.addEventListener('click', async function () {
+        genBtn.disabled = true;
+        genList.innerHTML = '';
+        genNotice.textContent = 'Ищем и проверяем...';
+        var anim = runAnim(genScan, genScanText, genScanHandle, [
+          'Генерируем 6–8 символов...',
+          'Проверяем Bot API и t.me...',
+          'Сверяем Fragment...'
+        ], 1200);
+
+        try {
+          var q = rareToggle.checked ? '&rare=true' : '';
+          var res = await Promise.all([fetch('/api/generate?count=6&onlyAvailable=true' + q), anim]);
+          var data = await res[0].json();
+          var items = (data && data.items) || [];
+          if (!items.length) {
+            genNotice.textContent = 'Свободные в этом проходе не найдены — жми ещё раз.';
+            return;
+          }
+          var rareN = items.filter(function (x) { return x.badge && x.badge.code === 'rare_premium'; }).length;
+          genNotice.textContent = 'Найдено: ' + items.length + ' • Редких (премиум): ' + rareN;
+          items.forEach(function (it) {
+            var info = badgeInfo(it);
+            var c = it.checks || {};
+            var src = [
+              c.botApi && c.botApi.checked ? 'Bot API ✓' : 'Bot API —',
+              c.tMe && c.tMe.checked ? 't.me ✓' : 't.me —',
+              c.fragment && c.fragment.checked ? 'Fragment ✓' : 'Fragment —'
+            ].join(' • ');
+            var el = document.createElement('div');
+            el.className = 'card';
+            el.innerHTML =
+              '<div class="card-top">' +
+                '<div><div class="handle">@' + it.username + '</div><div class="meta">' + src + '</div></div>' +
+                '<span class="pill ' + info.cls + '">' + info.label + '</span>' +
+              '</div>';
+            genList.appendChild(el);
+          });
+        } catch (_) {
+          genScan.classList.add('hidden');
+          genNotice.textContent = 'Ошибка сервера при генерации.';
+        } finally {
+          genBtn.disabled = false;
+        }
+      });
+
+      // Чекер
+      var chkInput = document.getElementById('chkInput');
+      var chkBtn = document.getElementById('chkBtn');
+      var chkScan = document.getElementById('chkScan');
+      var chkScanText = document.getElementById('chkScanText');
+      var chkScanHandle = document.getElementById('chkScanHandle');
+      var chkNotice = document.getElementById('chkNotice');
+      var chkList = document.getElementById('chkList');
+
+      chkBtn.addEventListener('click', async function () {
+        var raw = chkInput.value.trim();
+        var u = clean(raw);
+        if (!u) {
+          chkNotice.textContent = 'Введи юзернейм.';
+          return;
+        }
+        chkBtn.disabled = true;
+        chkList.innerHTML = '';
+        chkNotice.textContent = 'Проверяем @' + u + '...';
+        var anim = runAnim(chkScan, chkScanText, chkScanHandle, [
+          'Запрос в Bot API...',
+          'Проверка t.me...',
+          'Проверка Fragment...'
+        ], 950);
+
+        try {
+          var res = await Promise.all([fetch('/api/check?username=' + encodeURIComponent(u)), anim]);
+          var data = await res[0].json();
+          if (!data.ok) {
+            chkNotice.textContent = data.message || 'Неверный формат.';
+            return;
+          }
+          var info = badgeInfo(data);
+          chkNotice.textContent = 'Проверка @' + data.username + ' завершена.';
+          var c = data.checks || {};
+          var el = document.createElement('div');
+          el.className = 'card';
+          el.innerHTML =
+            '<div class="card-top">' +
+              '<div><div class="handle">@' + data.username + '</div><div class="meta">' +
+     
